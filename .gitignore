@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Build
+dist/
+build/
+
+# Env & Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Logs
+*.log
+
+# Temp
+~$*
+*.tmp
+*.bak

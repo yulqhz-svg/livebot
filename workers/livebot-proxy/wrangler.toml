@@ -1,0 +1,16 @@
+name = "livebot-proxy"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+# 限流配置
+[vars]
+RATE_LIMIT_MAX = "30"
+RATE_LIMIT_WINDOW = "60"
+
+# 可观测性
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+# 部署环境 (修改为你的域名)
+# 部署后: https://livebot-proxy.<你的子域名>.workers.dev

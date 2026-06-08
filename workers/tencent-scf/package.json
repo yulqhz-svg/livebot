@@ -1,0 +1,6 @@
+{
+  "name": "livebot-tencent-scf",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LiveBot DeepSeek API proxy — Tencent Cloud SCF version"
+}

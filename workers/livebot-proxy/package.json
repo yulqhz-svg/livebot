@@ -1,0 +1,17 @@
+{
+  "name": "livebot-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LiveBot DeepSeek API proxy with license validation",
+  "main": "src/index.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "secret:api-key": "wrangler secret put DEEPSEEK_API_KEY",
+    "secret:admin": "wrangler secret put ADMIN_SECRET",
+    "secret:license": "wrangler secret put LICENSE_SECRET"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

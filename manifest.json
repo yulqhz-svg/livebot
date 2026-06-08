@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "LiveBotV2.21 - 抖音直播AI助手",
+  "version": "1.0.0",
+  "description": "抖音直播间AI智能评论、自动点赞工具，接入DeepSeek大模型，支持免费/会员双版本",
+  "author": "LiveBot",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://live.douyin.com/*"
+      ],
+      "js": [
+        "src/utils/helpers.js",
+        "src/utils/storage.js",
+        "src/utils/logger.js",
+        "src/core/ElementFinder.js",
+        "src/core/AntiDetection.js",
+        "src/license/MachineCode.js",
+        "src/license/LicenseManager.js",
+        "src/core/AutoLike.js",
+        "src/core/AutoComment.js",
+        "src/core/AiComment.js",
+        "src/components/FloatingButton.js",
+        "src/components/Sidebar.js",
+        "src/content/index.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://live.douyin.com/*",
+    "https://api.deepseek.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/*", "img/*"
+      ],
+      "matches": [
+        "https://live.douyin.com/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
