@@ -57,6 +57,11 @@
 
     setupEventListeners();
 
+    // Auto-clear logs every 2 hours
+    setInterval(async () => {
+      await Logger.clear();
+    }, 7200000);
+
     // Periodic license check
     setInterval(async () => {
       const r = await LicenseManager.validate();
@@ -311,6 +316,14 @@
 
     window.addEventListener('livebot:license:changed', (e) => {
       refreshLicense();
+    });
+
+    window.addEventListener('livebot:log:added', (e) => {
+      if (state.sidebar) state.sidebar.addLog(e.detail);
+    });
+
+    window.addEventListener('livebot:log:cleared', () => {
+      if (state.sidebar) state.sidebar.clearLogs();
     });
   }
 
