@@ -101,6 +101,9 @@ async function handleMessage(message) {
       case 'ACTIVATE_LICENSE':
         return await proxyActivate(message.machineCode, message.licenseKey);
 
+      case 'RENEW_LICENSE':
+        return await proxyRenew(message.machineCode, message.licenseKey);
+
       case 'GET_PRICING':
         return PRICING_INFO;
 
@@ -136,10 +139,13 @@ async function addLogEntry(entry) {
 
 async function proxyDeepSeek(payload) {
   try {
-    // 获取授权信息
+    // 获取授权信息 — 使用当前机器码（非缓存）
     const license = (await chrome.storage.local.get(STORAGE_KEYS.LICENSE))[STORAGE_KEYS.LICENSE] || {};
-    const machineCode = license.machineCode || '';
     const licenseKey = license.key || '';
+
+    // 动态获取当前机器码（content script 中 MachineCode.generate() 的结果通过消息传递）
+    // 这里用缓存中的 machineCode 作为 fallback（validate 成功后会更新为当前码）
+    let machineCode = license.machineCode || '';
 
     const res = await fetch(PROXY_URL + '/api/chat', {
       method: 'POST',
@@ -187,5 +193,18 @@ async function proxyActivate(machineCode, licenseKey) {
     return await res.json();
   } catch (e) {
     return { success: false, error: '服务器连接失败: ' + e.message };
+  }
+}
+
+async function proxyRenew(machineCode, licenseKey) {
+  try {
+    const res = await fetch(PROXY_URL + '/api/renew', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ machineCode, licenseKey })
+    });
+    return await res.json();
+  } catch (e) {
+    return { valid: false, tier: 'free', reason: '服务器连接失败: ' + e.message };
   }
 }

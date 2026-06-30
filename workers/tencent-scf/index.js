@@ -19,6 +19,10 @@ const crypto = require('crypto');
 
 const EPOCH_DATE = new Date('2025-01-01');
 const KEY_PREFIX = 'LIVEBOT-';
+const MAX_DEVICES = parseInt(process.env.ACTIVE_DEVICES || '1');
+
+// 激活设备追踪 (生产环境替换为持久化数据库)
+const deviceRegistry = new Map(); // licenseKey → Set of machineCodes
 
 // === HMAC ===
 function hmacSign(message, secretHex) {
@@ -147,9 +151,19 @@ exports.main_handler = async (event) => {
     return handleActivate(event, licenseSecret);
   }
 
+  // License 续期
+  if (path === '/api/renew' && method === 'POST') {
+    return handleRenew(event, licenseSecret);
+  }
+
   // 管理端: 生成授权 Key
   if (path === '/api/generate-key' && method === 'POST') {
     return handleGenerateKey(event, licenseSecret);
+  }
+
+  // 管理端: 撤销授权 Key
+  if (path === '/api/revoke' && method === 'POST') {
+    return handleRevoke(event, licenseSecret);
   }
 
   return jsonResponse(404, { error: 'Not Found' });
@@ -250,7 +264,63 @@ function handleActivate(event, licenseSecret) {
     return jsonResponse(200, { success: false, error: result.reason });
   }
 
+  // 设备绑定检查
+  const devices = deviceRegistry.get(formatted) || new Set();
+  if (devices.size >= MAX_DEVICES && !devices.has(machineCode)) {
+    return jsonResponse(200, { success: false, error: '该 License 已绑定其他设备，如需换绑请联系管理员' });
+  }
+  devices.add(machineCode);
+  deviceRegistry.set(formatted, devices);
+
   return jsonResponse(200, { success: true, expiry: result.expiry });
+}
+
+// === POST /api/renew ===
+function handleRenew(event, licenseSecret) {
+  const body = readBody(event);
+  if (!body) return jsonResponse(400, { error: '无效的请求体' });
+
+  const { machineCode, licenseKey } = body;
+  const result = validateLicenseInternal(machineCode, licenseKey, licenseSecret);
+
+  if (!result.valid) {
+    return jsonResponse(200, { valid: false, tier: 'free', reason: result.reason });
+  }
+
+  return jsonResponse(200, { valid: true, tier: 'vip', expiry: result.expiry });
+}
+
+// === POST /api/revoke (管理端) ===
+function handleRevoke(event, licenseSecret) {
+  const body = readBody(event);
+  if (!body) return jsonResponse(400, { error: '无效的请求体' });
+
+  const adminSecret = process.env.ADMIN_SECRET;
+  if (!adminSecret) {
+    return jsonResponse(500, { error: '服务未配置 ADMIN_SECRET' });
+  }
+
+  const { adminToken, licenseKey } = body;
+
+  if (adminToken !== adminSecret) {
+    return jsonResponse(403, { error: '管理端密钥无效' });
+  }
+
+  if (!licenseKey) {
+    return jsonResponse(400, { error: '缺少 licenseKey' });
+  }
+
+  // 追加到环境变量（运行时生效，实例回收前有效）
+  const current = process.env.REVOKED_KEYS || '';
+  const formatted = licenseKey.trim().toUpperCase();
+  if (!current.split(',').map(s => s.trim().toUpperCase()).includes(formatted)) {
+    process.env.REVOKED_KEYS = current ? current + ',' + formatted : formatted;
+  }
+
+  // 清除设备绑定
+  deviceRegistry.delete(formatted);
+
+  return jsonResponse(200, { revoked: true, licenseKey: formatted });
 }
 
 // === POST /api/generate-key (管理端) ===
